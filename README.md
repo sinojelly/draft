@@ -1,83 +1,125 @@
-# SyncGhost - Vanilla SPA 版本
+# RuleSync
 
-这是 SyncGhost 的 Vanilla SPA (原生单页应用) 版本。
+**RuleSync** 是一款轻量级的代码备份与同步工具。它能够根据预设的规则（兼容 `.gitignore` 语法），将源目录中的指定文件保持目录结构地同步到目标目录，并自动执行 Git 提交与推送操作。
 
-## 架构特点
+## ✨ 功能特性
 
-- **单页体验 (SPA)**：使用客户端路由实现页面切换，无需刷新
-- **物理模块化拆分**：代码按功能模块拆分到独立文件
-- **ES6 原生 import**：使用标准的 ES6 模块系统
-- **无框架依赖**：纯原生 JavaScript + HTML + CSS 实现
-- **HTML Template**：使用模板字符串生成 DOM
+  * **规则过滤**：支持类似 `.gitignore` 的规则文件，精确控制需要备份的文件或文件夹。
+  * **结构保留**：同步时严格保持源目录的层级结构。
+  * **安全保障**：内置“目的路径白名单”机制。首次同步到新目录时需人工确认，防止误删非备份目录。
+  * **自动 Git 流**：同步完成后自动执行 `git add`、`git commit` 和 `git push`。
+  * **智能清理**：默认在同步前清理目标目录，确保备份内容的纯净性（可选关闭）。
+  * **实时反馈**：运行过程中清晰展示文件拷贝状态及 Git 命令执行结果。
 
-## 目录结构
+-----
 
-```
-vanilla-spa/
-├── index.html              # 入口 HTML 文件
-├── styles/
-│   └── main.css           # 全局样式
-└── js/
-    ├── main.js            # 应用入口
-    └── modules/
-        ├── App.js         # 主应用模块
-        ├── components/    # 组件模块
-        │   └── Sidebar.js
-        └── pages/         # 页面模块
-            ├── Dashboard.js
-            ├── Tasks.js
-            ├── Accounts.js
-            └── Settings.js
-```
+## 🚀 安装与编译
 
-## 使用方法
+### 外部依赖
 
-### 本地开发
+本项目基于 **Go (Golang)** 开发，使用了以下第三方库：
 
-由于使用了 ES6 模块，需要通过 HTTP 服务器运行（不能直接打开 HTML 文件）：
+  * `github.com/sabhiram/go-gitignore`: 用于解析和匹配 `.gitignore` 风格的规则。
+
+### 编译步骤
+
+1.  **克隆/下载源码**到本地。
+2.  在项目根目录初始化并下载依赖：
+    ```bash
+    go mod init rulesync
+    go get github.com/sabhiram/go-gitignore
+    ```
+3.  编译可执行文件：
+      * **Windows**:
+        ```bash
+        go build -o RuleSync.exe main.go
+        ```
+      * **Linux/macOS**:
+        ```bash
+        go build -o rulesync main.go
+        ```
+
+-----
+
+## 📖 使用方法
+
+### 基础命令行参数
+
+| 参数 | 说明 | 默认值 |
+| :--- | :--- | :--- |
+| `-src` | **(必填)** 源目录路径 | 无 |
+| `-dest` | **(必填)** 目的目录路径 | 无 |
+| `-rules` | 规则文件路径 | 源目录下 `.rulesync` |
+| `-clean` | 是否在拷贝前清空目的目录 | `true` |
+
+### 快速开始
 
 ```bash
-# 使用 Python 3
-python -m http.server 8000
+# 最简运行：使用源目录下的 .rulesync 规则，同步并提交
+RuleSync -src ./my_project -dest D:/backups/my_project_git
 
-# 使用 Node.js (http-server)
-npx http-server
-
-# 使用 PHP
-php -S localhost:8000
+# 指定自定义规则文件且不清理目的目录
+RuleSync -src ./src -dest ./backup -rules my.rules -clean=false
 ```
 
-然后在浏览器访问：`http://localhost:8000`
+** 注意事项：**
+* **Git 仓库要求：** 目的目录 (-dest) 必须已经是一个 Git 仓库（即包含 .git 文件夹）。如果是新目录，请先执行 git init 并设置好 git remote。
+* **静默提交：** 程序会自动执行推送，请确保你的 SSH Key 或 Git 凭据已配置好，无需交互式输入密码。
 
-### 部署
+### 规则文件示例 (`.rulesync`)
 
-将整个 `vanilla-spa` 目录上传到 Web 服务器即可。
+规则语法与 `.gitignore` 一致： 
 
-## 技术栈
+```text
+# 忽略所有 node_modules
+node_modules/
 
-- **HTML5**：语义化标签、原生 `<progress>` 元素
-- **CSS3**：CSS 变量、Grid、Flexbox、动画
-- **JavaScript ES6+**：
-  - ES6 模块 (import/export)
-  - 类 (Class)
-  - 箭头函数
-  - 模板字符串
-  - 解构赋值
-  - Promise / async-await
+# 忽略临时文件
+*.tmp
+*.log
 
-## 功能特性
+# 仅包含特定目录 (通过 ! 排除忽略)
+# 注意：规则处理取决于具体配置，建议采用“排除法”
+```
 
-✅ 仪表盘：实时数据监控、传输进度、终端日志
-✅ 任务管理：创建、编辑、删除同步任务
-✅ 账号管理：网盘账号绑定、解绑
-✅ 系统设置：全局配置参数
-✅ 响应式设计：适配不同屏幕尺寸
-✅ 实时更新：模拟数据实时变化
-✅ Toast 通知：操作反馈提示
+** 注意: `.rulesync`默认配置的是要忽略的内容 **
+主要考虑是可复用已有的.gitignore文件，备份完整项目。
 
-## 设计理念
+如果你想只拷贝某几个文件，其他都不要，可以利用 .gitignore 的 “取反” (!) 语法。
 
-- **极简 (Minimalist)**：界面干净，专注核心功能
-- **现代 (Modern)**：参考 Windows 11 视觉设计
-- **轻量 (Lightweight)**：无外部依赖，加载快速
-- **原生 (Native)**：充分利用浏览器原生能力
+示例：只想备份 src 文件夹和 README.md
+在 .rulesync 中这样写：
+
+```text
+# 先忽略所有内容
+*
+
+# 排除掉（即保留）src 目录
+!src/
+
+# 排除掉（即保留）README.md 文件
+!README.md
+
+# 如果 src 内部还有想忽略的，可以继续写
+src/**/*.tmp
+```
+-----
+
+## 🛡️ 安全机制说明
+
+为了防止因误输入 `-dest` 参数（例如误输入为 `C:/Windows` 或 `Desktop`）导致严重的数据丢失，RuleSync 引入了**路径记忆功能**：
+
+1.  工具在运行目录下维护一个 `rulesync_history.txt` 文件。
+2.  当指定的 `-dest` 路径不在历史记录中时，工具会暂停并询问：
+    > ⚠️ 警告: 路径 [XXX] 不在历史记录中。确认将其加入历史路径并继续运行吗？(y/n)
+3.  只有用户输入 `y` 后，该路径才会被记录并执行后续的清理与拷贝操作。
+4. Git 仓库保护：即使开启了 -clean 参数，RuleSync 也会智能识别并保留目的目录下的 .git 文件夹。这意味着你的提交历史（Commit History）和远程仓库配置（Remote URL）永远不会丢失。
+
+-----
+
+## 🛠️ 开发设计思路
+
+1.  **扫描机制**：采用 `filepath.Walk` 递归遍历源目录。
+2.  **匹配引擎**：将相对路径传入 `go-gitignore` 实例进行布尔值匹配，决定是否跳过该文件/目录。
+3.  **原子操作**：拷贝文件使用 `io.Copy` 以保证流式传输的稳定性。
+4.  **环境适配**：Git 命令通过 `os/exec` 调用宿主机的 `git` 环境，因此要求运行环境中已安装并配置好 Git。
